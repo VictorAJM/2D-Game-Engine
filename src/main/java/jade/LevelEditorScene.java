@@ -3,6 +3,8 @@ package jade;
 import org.joml.Vector2f;
 import org.lwjgl.BufferUtils;
 import renderer.Shader;
+import renderer.Texture;
+import util.Time;
 
 import java.awt.event.KeyEvent;
 import java.nio.FloatBuffer;
@@ -36,10 +38,10 @@ public class LevelEditorScene extends Scene {
             "}";
     private int vertexID, fragmentID, shaderProgram;
     private float[] vertexArray = {
-            100.5f,0.5f,0.0f,    1.0f,0.0f,0.0f,1.0f,
-            0.5f,100.5f,0.0f,   0.0f,1.0f,0.0f,1.0f,
-            100.5f,100.5f,0.0f,   0.0f,0.0f,1.0f,1.0f,
-            0.5f,0.5f,0.0f,   1.0f,1.0f,0.0f,1.0f
+    100.5f,0.5f,0.0f,    1.0f,0.0f,0.0f,1.0f,1,1,
+        0.5f,100.5f,0.0f,   0.0f,1.0f,0.0f,1.0f,0,0,
+        100.5f,100.5f,0.0f,   0.0f,0.0f,1.0f,1.0f,1,0,
+        0.5f,0.5f,0.0f,   1.0f,1.0f,0.0f,1.0f,0,1,
     };
     private int[] elementArray = {
             2,1,0,
@@ -47,15 +49,22 @@ public class LevelEditorScene extends Scene {
     };
     public int vaoID, vboID, eboID;
     private Shader defaultShader;
+    private Texture testTexture;
+
     public LevelEditorScene() {
 
     }
     @Override
     public void update(float dt) {
         camera.position.x  -=dt*50.0f;
+        camera.position.y -= dt*20.0f;
         defaultShader.use();
+        defaultShader.uploadTexture("TEX_SAMPLER",0);
+        glActiveTexture(GL_TEXTURE0);
+        testTexture.bind();
         defaultShader.uploadMat4f("uProjection",camera.getProjectionMatrix());
         defaultShader.uploadMat4f("uView",camera.getViewMatrix());
+        defaultShader.uploadFloat("uTime", Time.getTime());
         glBindVertexArray(vaoID);
         glEnableVertexAttribArray(0);
         glEnableVertexAttribArray(1);
@@ -75,6 +84,7 @@ public class LevelEditorScene extends Scene {
         defaultShader.compile();
         vaoID = glGenVertexArrays();
         glBindVertexArray(vaoID);
+        this.testTexture = new Texture("assets/images/testImage.png");
 
         FloatBuffer vertexBuffer = BufferUtils.createFloatBuffer(vertexArray.length);
         vertexBuffer.put(vertexArray).flip();
@@ -92,11 +102,14 @@ public class LevelEditorScene extends Scene {
 
         int positionSize = 3;
         int colorSize = 4;
-        int floatSizeBytes = 4;
-        int vertexSizeBytes = (positionSize+colorSize)*floatSizeBytes;
+        int uvSize = 2;
+        int vertexSizeBytes = (positionSize+colorSize + uvSize)*Float.BYTES;
         glVertexAttribPointer(0, positionSize,GL_FLOAT,false,vertexSizeBytes,0);
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(1,colorSize,GL_FLOAT, false,vertexSizeBytes,positionSize*floatSizeBytes);
+        glVertexAttribPointer(1,colorSize,GL_FLOAT, false,vertexSizeBytes,positionSize*Float.BYTES);
         glEnableVertexAttribArray(1);
+
+        glVertexAttribPointer(2,uvSize,GL_FLOAT, false, vertexSizeBytes, (positionSize+colorSize)*Float.BYTES);
+        glEnableVertexAttribArray(2);
     }
 }
